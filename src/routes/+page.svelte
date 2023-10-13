@@ -42,6 +42,15 @@
 			throw error(e?.statusCode || 500, e?.message || e);
 		}
 	};
+
+	const twoDays = 2 * 24 * 60 * 60 * 1000;
+	const now = new Date().getTime();
+
+	const getPriceColor = (productUpdatedAt) => {
+		if (!productUpdatedAt) return 'black';
+		const updatedAtDate = new Date(productUpdatedAt).getTime();
+		return now - updatedAtDate < twoDays ? 'red' : 'black';
+	};
 </script>
 
 <h1>Price Tracker</h1>
@@ -64,8 +73,14 @@
 	{#each sortedProducts as product}
 		<tr>
 			<td>{new Date(product.createdAt).toLocaleDateString()}</td>
-			<td>{product.title}</td>
-			<td>{parseFloat(product.priceCurrent).toFixed(2)}</td>
+			<td>
+				<a href={`https://www.amazon.com/dp/${product.productId}`} target="_blank">
+					{product.title}
+				</a>
+			</td>
+			<td style={`color:${getPriceColor(product.updatedAt)};`}>
+				{parseFloat(product.priceCurrent).toFixed(2)}
+			</td>
 			<td>
 				<button
 					on:click={() => {
