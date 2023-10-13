@@ -2,9 +2,17 @@
 	import { invalidateAll } from '$app/navigation';
 	export let data;
 
+	const { VITE_PRODUCTS_BASE_URL } = import.meta.env;
+	let sortedProducts = [];
 	let productUrl = '';
 
-	const { VITE_PRODUCTS_BASE_URL } = import.meta.env;
+	if (data?.products?.length) {
+		sortedProducts = data.products.sort((a, b) => {
+			const dateA = new Date(a.createdAt);
+			const dateB = new Date(b.createdAt);
+			return dateB.getTime() - dateA.getTime();
+		});
+	}
 
 	const addProduct = async () => {
 		try {
@@ -53,7 +61,7 @@
 		<th>Price</th>
 		<th />
 	</tr>
-	{#each data.products as product}
+	{#each sortedProducts as product}
 		<tr>
 			<td>{new Date(product.createdAt).toLocaleDateString()}</td>
 			<td>{product.title}</td>
