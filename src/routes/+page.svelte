@@ -1,20 +1,36 @@
 <script>
-	import { invalidateAll } from '$app/navigation';
-	export let data;
+	import { onMount } from 'svelte';
 
 	const { VITE_PRODUCTS_BASE_URL } = import.meta.env;
-	let sortedProducts = [];
+	let products = [];
 	let productUrl = '';
+	let loading = null;
 
-	if (data?.products?.length) {
-		sortedProducts = data.products.sort((a, b) => {
-			const dateA = new Date(a.createdAt);
-			const dateB = new Date(b.createdAt);
+	const getSortedProducts = (products) => {
+		return products.sort((a, b) => {
+			const dateA = new Date(a.dateCreated);
+			const dateB = new Date(b.dateCreated);
 			return dateB.getTime() - dateA.getTime();
 		});
-	}
+	};
+
+	const loadProducts = async () => {
+		loading = 'GET';
+		try {
+			const res = await fetch(VITE_PRODUCTS_BASE_URL);
+			const resJson = await res.json();
+			if (resJson.products.length) {
+				products = getSortedProducts(resJson.products);
+			}
+		} catch (e) {
+			throw error(e?.statusCode || 500, e?.message || e);
+		} finally {
+			loading = null;
+		}
+	};
 
 	const addProduct = async () => {
+		loading = 'POST';
 		try {
 			await fetch(VITE_PRODUCTS_BASE_URL, {
 				method: 'POST',
@@ -26,22 +42,32 @@
 					url: productUrl
 				})
 			});
-			invalidateAll();
+			productUrl = '';
 		} catch (e) {
 			throw error(e?.statusCode || 500, e?.message || e);
+		} finally {
+			loading = null;
 		}
+		await loadProducts();
 	};
 
 	const deleteProduct = async (productId) => {
+		loading = 'DELETE';
 		try {
 			await fetch(`${VITE_PRODUCTS_BASE_URL}/${productId}`, {
 				method: 'DELETE'
 			});
-			invalidateAll();
 		} catch (e) {
 			throw error(e?.statusCode || 500, e?.message || e);
+		} finally {
+			loading = null;
 		}
+		await loadProducts();
 	};
+
+	onMount(async () => {
+		await loadProducts();
+	});
 
 	const twoDays = 2 * 24 * 60 * 60 * 1000;
 	const now = new Date().getTime();
@@ -61,6 +87,13 @@
 		<input type="text" bind:value={productUrl} />
 	</label>
 	<button on:click={addProduct}>Add</button>
+	{#if loading === 'GET'}
+		<span>loading products...</span>
+	{:else if loading === 'POST'}
+		<span>adding product...</span>
+	{:else if loading === 'DELETE'}
+		<span>deleting product...</span>
+	{/if}
 </div>
 
 <table style="text-align:left; margin-top:1rem;">
@@ -70,15 +103,15 @@
 		<th>Price</th>
 		<th />
 	</tr>
-	{#each sortedProducts as product}
+	{#each products as product}
 		<tr>
-			<td>{new Date(product.createdAt).toLocaleDateString()}</td>
+			<td>{new Date(product.dateCreated).toLocaleDateString()}</td>
 			<td>
 				<a href={`https://www.amazon.com/dp/${product.productId}`} target="_blank">
-					{product.title}
+					{product.title.length < 50 ? product.title : `${product.title.substring(0, 50)}...`}
 				</a>
 			</td>
-			<td style={`color:${getPriceColor(product.updatedAt)};`}>
+			<td style={`color:${getPriceColor(product.dateUpdated)};`}>
 				{parseFloat(product.priceCurrent).toFixed(2)}
 			</td>
 			<td>
