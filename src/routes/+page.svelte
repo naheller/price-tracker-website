@@ -82,7 +82,7 @@
 			<th>Price</th>
 			<th />
 		</tr>
-		{#each data.products as product}
+		{#each getSortedProducts(data.products) as product}
 			<tr>
 				<td>{new Date(product.dateCreated).toLocaleDateString()}</td>
 				<td>
