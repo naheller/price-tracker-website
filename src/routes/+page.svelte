@@ -40,7 +40,9 @@
 	action="?/addProduct"
 	use:enhance={() => {
 		addingProduct = true;
-		form.urlMissing = false;
+		if (form) {
+			form.urlMissing = false;
+		}
 		return async ({ update }) => {
 			addingProduct = false;
 			update();
