@@ -2,12 +2,20 @@ import { error, fail } from '@sveltejs/kit';
 
 const { VITE_PRODUCTS_BASE_URL } = import.meta.env;
 
+const getSortedProducts = (products) => {
+	return products.sort((a, b) => {
+		const dateA = new Date(a.dateCreated);
+		const dateB = new Date(b.dateCreated);
+		return dateB.getTime() - dateA.getTime();
+	});
+};
+
 /** @type {import('./$types').PageServerLoad} */
 export const load = async ({ fetch }) => {
 	try {
 		const res = await fetch(VITE_PRODUCTS_BASE_URL);
 		const resJson = await res.json();
-		return { products: resJson?.products || [] };
+		return { products: resJson?.products ? getSortedProducts(resJson.products) : [] };
 	} catch (e) {
 		error(500, { message: 'Could not load products' });
 	}
@@ -21,7 +29,7 @@ export const actions = {
 			const productUrl = formData.get('productUrl');
 
 			if (!productUrl) {
-				return fail(400, { urlMissing: true });
+				return fail(400, { productUrl, missing: true });
 			}
 
 			await fetch(VITE_PRODUCTS_BASE_URL, {
@@ -37,7 +45,7 @@ export const actions = {
 
 			return { success: true };
 		} catch (e) {
-			throw error(500, { message: 'Could not add product' });
+			error(500, { message: 'Could not add product' });
 		}
 	},
 	deleteProduct: async ({ request, fetch }) => {
@@ -51,7 +59,7 @@ export const actions = {
 
 			return { success: true };
 		} catch (e) {
-			throw error(500, { message: 'Could not delete product' });
+			error(500, { message: 'Could not delete product' });
 		}
 	}
 };

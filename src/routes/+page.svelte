@@ -11,6 +11,20 @@
 	let addingProduct = false;
 	let deletingProduct = false;
 	let productIdToDelete = '';
+	let productIdHovering = '';
+
+	let searchTerm = '';
+	let displayMode = 'grid';
+
+	let filteredProducts = data.products;
+
+	$: searchTerm,
+		(filteredProducts = data.products.filter((product) => {
+			if (!!searchTerm) {
+				return product.title.toLowerCase().includes(searchTerm);
+			}
+			return product;
+		}));
 
 	const getPriceColor = (productUpdatedAt) => {
 		const twoDays = 2 * 24 * 60 * 60 * 1000;
@@ -19,95 +33,195 @@
 		const updatedAtDate = new Date(productUpdatedAt).getTime();
 		return now - updatedAtDate < twoDays ? 'red' : 'black';
 	};
-
-	const getSortedProducts = (products) => {
-		return products.sort((a, b) => {
-			const dateA = new Date(a.dateCreated);
-			const dateB = new Date(b.dateCreated);
-			return dateB.getTime() - dateA.getTime();
-		});
-	};
 </script>
 
-<h1>Price Tracker</h1>
+<div style="max-width: 800px; margin: auto;">
+	<div style="display: flex; justify-content: space-between; align-items: center;">
+		<h1>Price Tracker</h1>
+		<div>
+			<button
+				style="height: 2rem;"
+				on:click={() => {
+					displayMode = 'grid';
+				}}
+			>
+				Grid
+			</button>
+			<button
+				style="height: 2rem;"
+				on:click={() => {
+					displayMode = 'table';
+				}}
+				>Table
+			</button>
+		</div>
+	</div>
 
-{#if $page?.error?.message}
-	<p>Error: {$page?.error?.message}</p>
-{/if}
+	<form
+		method="POST"
+		action="?/addProduct"
+		use:enhance={() => {
+			addingProduct = true;
+			return async ({ update }) => {
+				addingProduct = false;
+				update();
+			};
+		}}
+	>
+		<div style="display: flex; gap: 0.25rem; width: 100%;">
+			<input
+				id="productUrl"
+				name="productUrl"
+				type="url"
+				placeholder="Product URL"
+				style="flex: 1; line-height: 1.25rem;"
+			/>
+			<button type="submit" disabled={addingProduct}>
+				{#if addingProduct}
+					Adding...
+				{:else}
+					Add
+				{/if}
+			</button>
+		</div>
+	</form>
 
-<form
-	method="POST"
-	action="?/addProduct"
-	use:enhance={() => {
-		addingProduct = true;
-		if (form) {
-			form.urlMissing = false;
-		}
-		return async ({ update }) => {
-			addingProduct = false;
-			update();
-		};
-	}}
->
-	<label for="productUrl">URL</label>
-	<input id="productUrl" name="productUrl" type="url" />
-	<button type="submit" disabled={addingProduct}>
-		{#if addingProduct}
-			Adding...
-		{:else}
-			Add product
-		{/if}
-	</button>
-	{#if form?.urlMissing}
-		<span>Enter a URL</span>
+	<div style="display: flex; gap: 0.25rem; width: 100%; margin-top: 0.5rem;">
+		<input
+			id="searchTerm"
+			bind:value={searchTerm}
+			style="flex: 1; line-height: 1.25rem;"
+			placeholder="Search term"
+		/>
+	</div>
+
+	{#if form?.missing}
+		<p style="color: red;">Product URL is required</p>
 	{/if}
-</form>
 
-<form
-	method="POST"
-	action="?/deleteProduct"
-	use:enhance={({ formData }) => {
-		deletingProduct = true;
-		formData.append('productId', productIdToDelete);
-		return async ({ update }) => {
-			deletingProduct = false;
-			update();
-		};
-	}}
->
-	<table style="text-align:left; margin-top:1rem;">
-		<tr>
-			<th>Date Added</th>
-			<th>Title</th>
-			<th>Price</th>
-			<th />
-		</tr>
-		{#each getSortedProducts(data.products) as product}
-			<tr>
-				<td>{new Date(product.dateCreated).toLocaleDateString()}</td>
-				<td>
-					<a href={`https://www.amazon.com/dp/${product.productId}`} target="_blank">
-						{product.title.length < 50 ? product.title : `${product.title.substring(0, 50)}...`}
-					</a>
-				</td>
-				<td style={`color:${getPriceColor(product.dateUpdated)};`}>
-					{parseFloat(product.priceCurrent).toFixed(2)}
-				</td>
-				<td>
-					<button
-						on:click={() => {
-							productIdToDelete = product.productId;
-						}}
-						disabled={deletingProduct}
+	{#if $page?.error?.message}
+		<p style="color: red;">Error: {$page.error.message}</p>
+	{/if}
+
+	<form
+		method="POST"
+		action="?/deleteProduct"
+		use:enhance={({ formData }) => {
+			deletingProduct = true;
+			formData.append('productId', productIdToDelete);
+			return async ({ update }) => {
+				deletingProduct = false;
+				update();
+			};
+		}}
+	>
+		{#if displayMode === 'table'}
+			<table style="width: 100%; text-align: left; margin-top: 2rem;">
+				<tr>
+					<th>Date Added</th>
+					<th>Price</th>
+					<th>Title</th>
+					<th />
+				</tr>
+				{#each filteredProducts as product}
+					<tr>
+						<td>{new Date(product.dateCreated).toLocaleDateString()}</td>
+						<td style={`color:${getPriceColor(product.dateUpdated)};`}>
+							{parseFloat(product.priceCurrent).toFixed(2)}
+						</td>
+						<td>
+							<a href={`https://www.amazon.com/dp/${product.productId}`} target="_blank">
+								{product.title}
+							</a>
+						</td>
+						<td>
+							<button
+								on:click={() => {
+									productIdToDelete = product.productId;
+								}}
+								disabled={deletingProduct && productIdToDelete === product.productId}
+							>
+								{#if deletingProduct && productIdToDelete === product.productId}
+									Deleting...
+								{:else}
+									Delete
+								{/if}
+							</button>
+						</td>
+					</tr>
+				{/each}
+			</table>
+		{:else}
+			<div
+				style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-top: 2rem;"
+			>
+				{#each filteredProducts as product}
+					<div
+						style="max-width: 200px; display: flex; flex-direction: column; justify-content: space-between;"
 					>
-						{#if deletingProduct}
-							Deleting...
-						{:else}
-							Delete
-						{/if}
-					</button>
-				</td>
-			</tr>
-		{/each}
-	</table>
-</form>
+						<!-- svelte-ignore a11y-no-static-element-interactions -->
+						<div
+							on:mouseenter={() => {
+								productIdHovering = product.productId;
+							}}
+							on:mouseleave={() => {
+								productIdHovering = '';
+							}}
+							style="position: relative;"
+						>
+							<img
+								src={product.imageUrl}
+								alt={product.title}
+								style="width: 100%; display: block; border: 1px solid gray;"
+							/>
+							{#if productIdHovering === product.productId}
+								<a href={`https://www.amazon.com/dp/${product.productId}`} target="_blank">
+									<div
+										style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; color: white; background: rgba(0, 0, 0, 0.5); padding: 0.75rem;"
+									>
+										<b>
+											{product.title.length < 100
+												? product.title
+												: `${product.title.substring(0, 100)}...`}
+										</b>
+									</div>
+								</a>
+							{/if}
+						</div>
+						<div
+							style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;"
+						>
+							<b style={`color:${getPriceColor(product.dateUpdated)};`}>
+								${parseFloat(product.priceCurrent).toFixed(2)}
+							</b>
+							<button
+								on:click={() => {
+									productIdToDelete = product.productId;
+								}}
+								disabled={deletingProduct && productIdToDelete === product.productId}
+							>
+								{#if deletingProduct && productIdToDelete === product.productId}
+									Deleting...
+								{:else}
+									Delete
+								{/if}
+							</button>
+						</div>
+					</div>
+				{/each}
+			</div>
+		{/if}
+	</form>
+</div>
+
+<style>
+	* {
+		font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue,
+			helvetica, Cantarell, Ubuntu, roboto, noto, arial, sans-serif;
+	}
+
+	h1 {
+		font-family: Iowan Old Style, Apple Garamond, Baskerville, Times New Roman, Droid Serif, Times,
+			Source Serif Pro, serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
+	}
+</style>
