@@ -52,7 +52,8 @@
 				on:click={() => {
 					displayMode = 'table';
 				}}
-				>Table
+			>
+				Table
 			</button>
 		</div>
 	</div>
@@ -118,14 +119,14 @@
 		{#if displayMode === 'table'}
 			<table style="width: 100%; text-align: left; margin-top: 2rem;">
 				<tr>
-					<th>Date Added</th>
+					<!-- <th>Date Added</th> -->
 					<th>Price</th>
 					<th>Title</th>
 					<th />
 				</tr>
 				{#each filteredProducts as product}
 					<tr>
-						<td>{new Date(product.dateCreated).toLocaleDateString()}</td>
+						<!-- <td>{new Date(product.dateCreated).toLocaleDateString()}</td> -->
 						<td style={`color:${getPriceColor(product.dateUpdated)};`}>
 							{parseFloat(product.priceCurrent).toFixed(2)}
 						</td>
@@ -152,9 +153,7 @@
 				{/each}
 			</table>
 		{:else}
-			<div
-				style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-top: 2rem;"
-			>
+			<div class="product-grid">
 				{#each filteredProducts as product}
 					<div
 						style="max-width: 200px; display: flex; flex-direction: column; justify-content: space-between;"
@@ -223,5 +222,24 @@
 	h1 {
 		font-family: Iowan Old Style, Apple Garamond, Baskerville, Times New Roman, Droid Serif, Times,
 			Source Serif Pro, serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
+	}
+
+	.product-grid {
+		margin-top: 2rem;
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 1rem;
+	}
+
+	@media (min-width: 480px) {
+		.product-grid {
+			grid-template-columns: repeat(4, 1fr);
+		}
+	}
+
+	@media (min-width: 1280px) {
+		.product-grid {
+			grid-template-columns: repeat(5, 1fr);
+		}
 	}
 </style>
