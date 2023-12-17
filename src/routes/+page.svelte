@@ -116,8 +116,13 @@
 			};
 		}}
 	>
+		<p
+			style="margin-bottom: 0; text-align: right; font-size: small; font-style: italic; color: gray;"
+		>
+			{`Showing ${filteredProducts.length} products`}
+		</p>
 		{#if displayMode === 'table'}
-			<table style="width: 100%; text-align: left; margin-top: 2rem;">
+			<table style="width: 100%; text-align: left;">
 				<tr>
 					<!-- <th>Date Added</th> -->
 					<th>Price</th>
@@ -225,7 +230,7 @@
 	}
 
 	.product-grid {
-		margin-top: 2rem;
+		margin-top: 0.5rem;
 		display: grid;
 		grid-template-columns: repeat(2, 1fr);
 		gap: 1rem;
