@@ -1,4 +1,5 @@
 <script>
+	import Lazy from 'svelte-lazy';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/stores';
 
@@ -173,11 +174,13 @@
 							}}
 							style="position: relative;"
 						>
-							<img
-								src={product.imageUrl}
-								alt={product.title}
-								style="width: 100%; display: block; border: 1px solid gray;"
-							/>
+							<Lazy height={250} keep={true}>
+								<img
+									src={product.imageUrl}
+									alt={product.title}
+									style="width: 100%; display: block; border: 1px solid gray;"
+								/>
+							</Lazy>
 							{#if productIdHovering === product.productId}
 								<a href={`https://www.amazon.com/dp/${product.productId}`} target="_blank">
 									<div
